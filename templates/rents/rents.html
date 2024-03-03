@@ -1,0 +1,221 @@
+{% include 'base.html'%}
+<body>
+<script src="/static/js/rents.js"></script>
+<script type="text/javascript" class="init">
+    $(document).ready(function() {
+        var table = $('#rents_table').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: '/rents/datatable',
+                type: 'GET',
+            },
+            search: {
+                return: true
+            },
+            responsive: true,
+            scrollCollapse: true,
+            scrollY: "100vh",
+            //dom: 'Plfrtip',
+            searchPanes: {
+                cascadePanes: true,
+                viewTotal: true
+            },
+            columnDefs: [
+                {
+                    "visible": false,
+                    target: [0],
+                },
+                {
+                    searchPanes: {
+                        show: false,
+                        initCollapsed: true,
+                    },
+                    targets: [0,1,2]
+                },
+                {
+                    searchPanes: {
+                        show: false,
+                    },
+                    targets: [3,4,5,6,7]
+                },
+            ],
+            columns: [
+                { data: 'id', title: "ID"},
+                { data: 'part_code', title: "Part code"},
+                { data: 'description', title: "Description" },
+                { data: 'quantity' , title: "Quantity"},
+                { data: 'position' , title: "Position"},
+                { title: "Map link", defaultContent: '<p data-placement="top" data-toggle="tooltip" title="Route"><button class="route btn btn-success btn-xs"><span class="bi bi-geo-alt-fill"></span></button></p>'},
+                { data: 'rent_date' , title: "Rent date"},
+                // { data: 'rent_expiration' , title: "Rent expiration"},
+                { defaultContent: '<p data-placement="top" data-toggle="tooltip" title="Edit"><button class="edit btn btn-primary btn-xs" data-bs-toggle="modal" data-bs-target="#rent_edit_modal"><span class="bi bi-pencil"></span></button></p>', title: "Modify"},
+                { defaultContent: '<p data-placement="top" data-toggle="tooltip" title="Delete"><button class="delete btn btn-danger btn-xs" data-bs-toggle="modal" data-bs-target="#del_row_modal"><span class="bi bi-trash3"></span></button></p>', title: "Delete"},
+            ],
+        });
+
+        $('#rents_table tbody').on('click', 'button.delete', function(){
+            var data = table.row($(this).parents('tr')).data();
+            document.getElementById('del_apply_btn').value = data['id'];
+        });
+
+        $('#rents_table tbody').on('click', 'button.edit', function(){
+            var data = table.row($(this).parents('tr')).data();
+            document.getElementById("rent_edit_id").value = data['id'];
+            document.getElementById("rent_edit_part_code").value = data['part_code'];
+            document.getElementById("rent_edit_description").value = data['description'];
+            document.getElementById("rent_edit_quantity").value = data['quantity'];
+            document.getElementById("rent_edit_position").value = data['position'];
+            document.getElementById("rent_edit_rent_date").value = data['rent_date'];
+        });
+
+        $('#rents_table tbody').on('click', 'button.route', function(){
+            let data = table.row($(this).parents('tr')).data();
+            let map_link = "https://maps.google.com/?q=" + data['position'];
+            window.open(map_link, '_blank');
+        });
+    });
+</script>
+
+<div class="section section-image" style="background-image: url('../../static/assets/home/Home wallpaper.jpg'); background-size: cover; height: 1600px; background-repeat:no-repeat;">
+    <!--  OPTION SECTION-->
+    <div class="row">
+        <div class="col-sm-1" style="margin-top: 5px !important;">
+            <!-- Button trigger modal -->
+            <button type="button" class="btn btn-success btn-outline-light m-3" data-bs-toggle="modal" data-bs-target="#add_rent_modal">Add</button>
+        </div>
+    </div>
+    <div class="row m-2" id="div_datatable">
+        {% include 'rents/datatable.html' %}
+    </div>
+</div>
+<!-- Modal -->
+<div class="modal fade" id="del_row_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="col">
+                    <h4 class="modal-title">Confirm deletion</h4>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" id="del_apply_btn" value="" class="btn btn-primary" data-bs-dismiss="modal" onclick="del_row(this.value);">Apply</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal -->
+<div class="modal fade" id="add_rent_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="col">
+                    <h4 class="modal-title">Add rent</h4>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-4">
+                        <div class="row">
+                            <label>Part code</label>
+                        </div>
+                        <div class="row mt-2">
+                            <label>Description</label>
+                        </div>
+                        <div class="row mt-1">
+                            <label>Quantity</label>
+                        </div>
+                        <div class="row mt-1">
+                            <label>Position</label>
+                        </div>
+                        <div class="row mt-2">
+                            <label>Rent date</label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="row">
+                            <input id="rent_add_part_code" value="">
+                        </div>
+                        <div class="row">
+                            <input id="rent_add_description" value="" >
+                        </div>
+                        <div class="row">
+                            <input id="rent_add_quantity" value="" >
+                        </div>
+                        <div class="row">
+                            <input id="rent_add_position" value="" >
+                        </div>
+                        <div class="row">
+                            <input type="date" id="rent_add_date" value="" >
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="add_row();">Apply</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal -->
+<div class="modal fade" id="rent_edit_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="col">
+                    <h4 class="modal-title">Change component data</h4>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-5">
+                        <div class="row">
+                            <label>Part code</label>
+                        </div>
+                        <div class="row mt-2">
+                            <label>Description</label>
+                        </div>
+                        <div class="row mt-2">
+                            <label>Quantity</label>
+                        </div>
+                        <div class="row mt-2">
+                            <label>Position</label>
+                        </div>
+                        <div class="row mt-2">
+                            <label>Rent date</label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="row" style="display:none">
+                            <input id="rent_edit_id" value="">
+                        </div>
+                        <div class="row">
+                            <input id="rent_edit_part_code" value="">
+                        </div>
+                        <div class="row">
+                            <input id="rent_edit_description" value="">
+                        </div>
+                        <div class="row">
+                            <input id="rent_edit_quantity" value="">
+                        </div>
+                        <div class="row">
+                            <input id="rent_edit_position" value="">
+                        </div>
+                        <div class="row">
+                            <input id="rent_edit_rent_date" value="">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="update_row()">Apply</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Footer-->
+{%include 'footer.html' %}
+</body>

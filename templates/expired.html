@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page</title>
+    <style>
+        body {
+          margin: 0;
+          padding: 0;
+          font-family: Arial, sans-serif;
+          background: linear-gradient(to right, #2980b9, #3498db);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 100vh;
+        }
+    </style>
+</head>
+<body>
+
+<div class="error-container">
+    <h1>Ops, Access expired :(</h1>
+    <p>Click <a href="/">here</a> to login again</p>
+</div>
+
+<script>
+    function performOAuthLogin(event) {
+      event.preventDefault();
+      let username = document.getElementById('username').value;
+      let password = document.getElementById('password').value;
+      let xhr = new XMLHttpRequest();
+      xhr.open('POST', '/auth/token', true);
+      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+      xhr.onload = function () {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          window.location.replace("/Home");
+        }
+        if (xhr.status === 401) {
+          alert("Login failed, wrong credential");
+        }
+      };
+      let requestBody = 'grant_type=password&username=' + encodeURIComponent(username) +
+                         '&password=' + encodeURIComponent(password);
+      xhr.send(requestBody);
+    }
+</script>
+
+</body>
+</html>

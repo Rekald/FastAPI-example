@@ -1,0 +1,369 @@
+{% include 'base.html'%}
+<body>
+<script src="/static/js/inventory.js"></script>
+<script type="text/javascript" class="init">
+    $(document).ready(function() {
+        var table = $('#inventory_table').DataTable({
+            processing: true,
+            serverSide: true,
+            stateSave: true,
+            ajax: {
+                url: '/inventory/datatable',
+                type: 'GET',
+            },
+            search: {
+                return: true
+            },
+            order: [[4, 'desc']],
+            responsive: true,
+            scrollCollapse: true,
+            scrollY: "100vh",
+            //dom: 'Plfrtip',
+            searchPanes: {
+                cascadePanes: true,
+                viewTotal: true
+            },
+            columnDefs: [
+                {
+                    "visible": false,
+                    target: [0],
+                },
+                {
+                    searchPanes: {
+                        show: false,
+                        initCollapsed: true,
+                    },
+                    targets: [0,1,2]
+                },
+                {
+                    searchPanes: {
+                        show: false,
+                    },
+                    targets: [3,4,5,6,7,8,9,10]
+                },
+            ],
+            columns: [
+                { data: 'id', title: "ID"},
+                { data: 'part_code', title: "Part code", orderable:false},
+                { data: 'description', title: "Description", orderable:false},
+                { data: 'producer' , title: "Producer", orderable:false},
+                { data: 'quantity' , title: "Quantity"},
+                { data: 'catalog_price', title: "Catalog price", orderable:false, render: $.fn.dataTable.render.number( '.', ',', 2, '', ' €' ) },
+                { data: 'discount' , title: "Discount", orderable:false, render: $.fn.dataTable.render.number( '.', ',', 2, '', ' %' )},
+                { data: 'buy_price' , title: "Buy price", orderable:false, render: $.fn.dataTable.render.number( '.', ',', 2, '', ' €' )},
+                { data: 'total_value', title: "Total value", render: $.fn.dataTable.render.number( '.', ',', 2, '', ' €' )},
+                { defaultContent: '<p data-placement="top" data-toggle="tooltip" title="Edit"><button class="edit btn btn-primary btn-xs" data-bs-toggle="modal" data-bs-target="#inventory_edit_modal"><span class="bi bi-pencil"></span></button></p>', title: "Modify"},
+                { defaultContent: '<p data-placement="top" data-toggle="tooltip" title="Delete"><button class="delete btn btn-danger btn-xs" data-bs-toggle="modal" data-bs-target="#del_row_modal"><span class="bi bi-trash3"></span></button></p>', title: "Delete"},
+                { defaultContent: '<p data-placement="top" data-toggle="tooltip" title="Rent Add"><button class="rent_add btn btn-danger btn-xs" data-bs-toggle="modal" data-bs-target="#inventory_rent_modal"><span class="bi bi-calendar-plus"></span></button></p>', title: "Add to rent"},
+            ],
+        });
+
+        $('#inventory_table tbody').on('click', 'button.delete', function(){
+            var data = table.row($(this).parents('tr')).data();
+            document.getElementById('del_apply_btn').value = data['id'];
+        });
+
+        $('#inventory_table tbody').on('click', 'button.edit', function(){
+            var data = table.row($(this).parents('tr')).data();
+            document.getElementById("id_edit").value = data['id'];
+            document.getElementById("part_code_edit").value = data['part_code'];
+            document.getElementById("description_edit").value = data['description'];
+            document.getElementById("producer_edit").value = data['producer'];
+            document.getElementById("quantity_edit").value = data['quantity'];
+            document.getElementById("catalog_price").value = data['catalog_price'];
+            document.getElementById("discount_edit").value = data['discount'];
+            document.getElementById("buy_price_edit").value = data['buy_price'];
+            document.getElementById("total_value_edit").value = data['total_value'];
+        });
+
+        $('#inventory_table tbody').on('click', 'button.rent_add', function(){
+            var data = table.row($(this).parents('tr')).data();
+            document.getElementById("inventory_rent_id").value = data['id'];
+            document.getElementById("inventory_rent_part_code").value = data['part_code'];
+            document.getElementById("inventory_rent_description").value = data['description'];
+            document.getElementById("inventory_rent_quantity").value = data['quantity'];
+            document.getElementById("inventory_rent_position").value = "";
+            document.getElementById("inventory_rent_rent_date").value = "";
+        });
+        get_total();
+    });
+</script>
+
+<div class="section section-image" style="background-image: url('../../static/assets/home/Home wallpaper.jpg'); background-size: cover; height: 1600px; background-repeat:no-repeat;">
+    <!--  OPTION SECTION-->
+    <div class="row" style="padding: 10px !important;">
+        <div class="col-sm-1" style="padding-left:30px">
+            <!-- Button trigger modal -->
+            <button type="button" class="btn btn-success btn-outline-light" data-bs-toggle="modal" data-bs-target="#add_inventory_modal">Add</button>
+        </div>
+        <div class="col-sm-1">
+            <div class="btn-group">
+                <button type="button" class="btn btn-success btn-outline-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    Actions
+                </button>
+                <ul class="dropdown-menu">
+                    <li><button class="dropdown-item" href="#" onclick="download_file('/inventory/report/xls', 'Inventory report.xlsx');">Download XLSX report</button></li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-sm-2">
+            <button type="button" class="btn btn-success btn-outline-light " data-bs-toggle="modal" data-bs-target="#inventory_show_total">Show totals</button>
+        </div>
+        <div class="row m-2" id="div_datatable">
+            {% include 'inventory/datatable.html' %}
+        </div>
+    </div>
+</div>
+<!-- Modals -->
+<div class="modal fade" id="del_row_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="col">
+                    <h4 class="modal-title">Confirm deletion</h4>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" id="del_apply_btn" value="" class="btn btn-primary" data-bs-dismiss="modal" onclick="del_row(this.value);">Apply</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="add_inventory_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="col">
+                    <h4 class="modal-title">Add inventory component</h4>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-4">
+                        <div class="row">
+                            <label>Part code</label>
+                        </div>
+                        <div class="row mt-2">
+                            <label>Description</label>
+                        </div>
+                        <div class="row mt-2">
+                            <label>Producer</label>
+                        </div>
+                        <div class="row mt-1">
+                            <label>Quantity</label>
+                        </div>
+                        <div class="row mt-1">
+                            <label>Catalog price</label>
+                        </div>
+                        <div class="row mt-1">
+                            <label>Discount</label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="row">
+                            <input id="inventory_part_code" value="">
+                        </div>
+                        <div class="row">
+                            <input id="inventory_description" value="" >
+                        </div>
+                        <div class="row">
+                            <input id="inventory_producer" value="" >
+                        </div>
+                        <div class="row">
+                            <input id="inventory_quantity" value="" >
+                        </div>
+                        <div class="row">
+                            <input id="inventory_catalog_price" value="" >
+                        </div>
+                        <div class="row">
+                            <input id="inventory_discount" value="">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="add_row();">Apply</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="inventory_edit_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="col">
+                    <h4 class="modal-title">Change component data</h4>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-5">
+                        <div class="row">
+                            <label>Part code</label>
+                        </div>
+                        <div class="row mt-2">
+                            <label>Description</label>
+                        </div>
+                        <div class="row mt-2">
+                            <label>Producer</label>
+                        </div>
+                        <div class="row mt-2">
+                            <label>Quantity</label>
+                        </div>
+                        <div class="row mt-1">
+                            <label>Catalog price</label>
+                        </div>
+                        <div class="row mt-1">
+                            <label>Discount</label>
+                        </div>
+                        <div class="row mt-1">
+                            <label>Buy price</label>
+                        </div>
+                        <div class="row mt-1">
+                            <label>Total value</label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="row" style="display:none">
+                            <input id="id_edit" value="">
+                        </div>
+                        <div class="row">
+                            <input id="part_code_edit" value="">
+                        </div>
+                        <div class="row">
+                            <input id="description_edit" value="">
+                        </div>
+                        <div class="row">
+                            <input id="producer_edit" value="">
+                        </div>
+                        <div class="row">
+                            <input id="quantity_edit" value="">
+                        </div>
+                        <div class="row">
+                            <input id="catalog_price" value="">
+                        </div>
+                        <div class="row">
+                            <input id="discount_edit" value="">
+                        </div>
+                        <div class="row">
+                            <input id="buy_price_edit" value="" disabled>
+                        </div>
+                        <div class="row">
+                            <input id="total_value_edit" value="" disabled>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="update_row()">Apply</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="inventory_rent_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="col">
+                    <h4 class="modal-title">Add component to rent</h4>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-5">
+                        <div class="row">
+                            <label>Part code</label>
+                        </div>
+                        <div class="row mt-2">
+                            <label>Description</label>
+                        </div>
+                        <div class="row mt-2">
+                            <label>Quantity</label>
+                        </div>
+                        <div class="row mt-2">
+                            <label>Position</label>
+                        </div>
+                        <div class="row mt-2">
+                            <label>Rent date</label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="row" style="display:none">
+                            <input id="inventory_rent_id" value="">
+                        </div>
+                        <div class="row">
+                            <input id="inventory_rent_part_code" value="">
+                        </div>
+                        <div class="row">
+                            <input id="inventory_rent_description" value="">
+                        </div>
+                        <div class="row">
+                            <input id="inventory_rent_quantity" value="">
+                        </div>
+                        <div class="row">
+                            <input id="inventory_rent_position" value="">
+                        </div>
+                        <div class="row">
+                            <input type="date" id="inventory_rent_rent_date" value="">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="add_to_rent()">Apply</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="inventory_show_total" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="col">
+                    <h4 class="modal-title">Inventory totals</h4>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-5">
+                        <div class="row">
+                            <label>Catalog total</label>
+                        </div>
+                        <div class="row mt-2">
+                            <label>Buy price total</label>
+                        </div>
+                        <div class="row mt-2">
+                            <label>Marginality</label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="row">
+                            <input id="catalog_total_value" value="0" readonly>
+                        </div>
+                        <div class="row">
+                            <input id="inventory_total_value" value="0" readonly>
+                        </div>
+                        <div class="row">
+                            <input id="total_marginality" value="0" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Footer-->
+{%include 'footer.html' %}
+</body>
