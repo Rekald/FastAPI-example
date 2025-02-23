@@ -1,13 +1,22 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, URL
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, sessionmaker
-from src.dependencies import db_root
+from .config import get_settings
 
-engine = create_engine(db_root)
+settings = get_settings()
 
+url_object = URL.create(
+    drivername="postgresql+psycopg2",
+    username=settings.POSTGRES_USER,
+    password=settings.POSTGRES_PWD,
+    host=settings.POSTGRES_SERVER,
+    port=settings.PGPORT,
+    database=settings.POSTGRES_DB,
+)
+
+engine = create_engine(url_object)
 
 class Base(DeclarativeBase):
     ...
-
 
 class Users(Base):
     __tablename__ = "users"
@@ -16,7 +25,6 @@ class Users(Base):
     username: Mapped[str] = mapped_column(unique=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(nullable=False)
     role: Mapped[int] = mapped_column(default="ro", nullable=False)
-
 
 class Inventory(Base):
     __tablename__ = "inventory"
@@ -30,18 +38,6 @@ class Inventory(Base):
     discount: Mapped[float] = mapped_column(default=False)
     buy_price: Mapped[float] = mapped_column(default=False)
     total_value: Mapped[float] = mapped_column(default=False)
-
-
-class Rents(Base):
-    __tablename__ = "rents"
-
-    id: Mapped[int] = mapped_column(primary_key=True, nullable=False, autoincrement=True)
-    part_code: Mapped[str] = mapped_column(nullable=False)
-    description: Mapped[str] = mapped_column(nullable=True)
-    quantity: Mapped[int] = mapped_column(default=False)
-    position: Mapped[str] = mapped_column(nullable=True)
-    rent_date: Mapped[str] = mapped_column(nullable=False)
-
 
 Base.metadata.create_all(engine, checkfirst=True)
 Session = sessionmaker(engine, autoflush=True)

@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: always
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    env_file:
+      - db/db.env
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_pwd
+    secrets:
+      - db_pwd
+    networks:
+      - backend_network
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    env_file:
+      - db/db.env
+    environment:
+      POSTGRES_PWD: /run/secrets/db_pwd
+    secrets:
+      - db_pwd
+    restart: always
+    networks:
+      - backend_network
+    depends_on:
+      - db
+
+networks:
+  backend_network:
+
+volumes:
+  pg-data:
+
+secrets:
+  db_pwd:
+    file: ./secrets/db_pwd

@@ -46,7 +46,7 @@ class OAuth2PasswordBearerWithCookie(OAuth2):
             scheme, param = get_authorization_scheme_param(authorization)
             if not authorization or scheme.lower() != "bearer":
                 raise credentials_exception
-            payload = jwt.decode(param, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            payload = jwt.decode(param, settings.SECRET_KEY, algorithms=[settings.JWT_ALGO])
             username: str = payload.get("sub", None)
             if username is None:
                 raise credentials_exception
@@ -88,9 +88,9 @@ def authenticate_user(username: str, password: str):
 
 def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE)
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.JWT_ALGO)
 
 
 def verify_token(authorization: str):
@@ -102,7 +102,7 @@ def verify_token(authorization: str):
         return False
 
     try:
-        payload = jwt.decode(param, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(param, settings.SECRET_KEY, algorithms=[settings.JWT_ALGO])
         username: str = payload.get("sub", None)
         if not username:
             return False
